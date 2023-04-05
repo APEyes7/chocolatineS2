@@ -1,83 +1,68 @@
-name: Chocolatine
+
+name : chocolatine
 
 on:
-  push:
-    branches-ignore:
-      - 'ga-ignore-* '
+  push :
+    branches-ignore :
+      - 'ga-ignore-**'
   pull_request:
-    branches-ignore:
-      - 'ga-ignore-*'
+    branches-ignore :
+      - 'ga-ignore-**'
 
-env:
-  MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-110-COT-1-1-pushswap-florentin.ganfon.git
-  EXECUTABLES: push_wap
+env :
+  EXECUTABLES :
+  MIRROR_URL :
 
-jobs:  
-  check_coding_style:
+jobs :
+  check_repository_cleanliness:
+    name: check_repository_cleanliness
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/epitech/coding-style-checker:latest
-    steps:
-      - name: check_coding_style
-        uses: actions/checkout@v3
+    steps :
+      - uses : actions/checkout@v3
       - run : |
-          check.sh $(pwd) $(pwd)
-          cat coding-style-reports.log
-          if [ -s $coding-style-reports.log ]
-          i=0
-          then
-            while read -r line
-            do                                                                                                                                                                       
-              tab=( ${line//:/ } )
-              yo=(${tab[0]})
-              str=( ${yo//// } )
-              echo "::error file=${str[1]},line=${tab[3]},title=${tab[2]} coding style error::${tab[3]}"
-              ((i++))
-            done < "coding-style-reports.log"
-          fi
-  
+          find -name "#*#" -exec echo "::error file={}:: {}" \;
+          find -name "*~" -exec echo "::error file={}:: {}" \;
+          find -name "pain_au_chocolat" -exec echo "::error file={}:: {}" \;
+          find -name "*.o" -exec echo "::error file={}:: {}" \;
+          find -name "*.a" -exec echo "::error file={}:: {}" \;
+          find -name "*.so" -exec echo "::error file={}:: {}" \;
+          find -name "*.gcno" -exec echo "::error file={}:: {}" \;
+          find -name "*.gcda" -exec echo "::error file={}:: {}" \;
+          find -name "*.gcov" -exec echo "::error file={}:: {}" \;
+          find -path "/tmp/" -exec echo "::error file={}:: {}" \;
+          find -name "##" -o -name ".o" -o -name ".a" -o -name "~" -o -name "pain_au_chocolat" -o -name ".so" -o -name ".gcno" -o -name ".gcda" -o -name ".gcov" -o -path "/tmp/"| grep -q . && exit 1 || exit 0
   check_program_compilation:
-    runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
-    needs: [check_coding_style]
+    name : check_program_compilation
+    runs-on : ubuntu-latest
+    container : epitechcontent/epitest-docker
+    timeout-minutes: 2
+    needs : check_repository_cleanliness
     steps:
-      - name: make_test
-        uses: actions/checkout@v3
-      - run: make
-        timeout-minutes: 2
-      - run: |
-            if [[ -e $EXECUTABLES ]] && [[ -x $EXECUTABLES ]]
-            then
-              exit 0
-            else
-                exit 1
-            fi
-      - name: make_clean_test
-        uses: actions/checkout@v3
-      - run: make clean
-      
+      - uses : actions/checkout@v3
+      - run : make
+      - run : |
+          make clean
+          find -name "$EXECUTABLES" | grep -q . && exit 0 || exit 1
   run_tests:
-    runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
-    needs: [check_coding_style, check_program_compilation]
+    name : run_tests
+    runs-on : ubuntu-latest
+    container : epitechcontent/epitest-docker
+    timeout-minutes: 2
+    needs : check_program_compilation
     steps:
-      - name: run_tests
-        uses: actions/checkout@v3
-      - run:
-          make test run
-        timeout-minutes: 2
-          
+      - uses : actions/checkout@v3
+      - run : make tests_run
   push_to_mirror:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
-    needs: [check_coding_style, check_program_compilation, run_tests]
+    needs : run_tests
+    if : github.event.push
     steps:
-        - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
-        - uses: pixta-dev/repository-mirroring-action@v1
-          with:
-            target_repo_url:
-                ${{ env.MIRROR_URL }}
-            ssh_private_key:
-                ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url:
+            $MIRROR_URL
+          ssh_private_key:
+            $GIT_SSH_PRIVATE_KEY
