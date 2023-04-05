@@ -8,8 +8,8 @@ on:
       - ga-ignore-*
 
 env:
-  MIRROR_URL: "git@github.com:houcham00/tester.git"
-  EXECUTABLES: "day06"
+  MIRROR_URL: "git@github.com:godlynjr/Minishell_2.git"
+  EXECUTABLES: "mysh"
 
 
 jobs:
