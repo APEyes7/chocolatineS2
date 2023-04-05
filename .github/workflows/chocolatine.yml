@@ -1,71 +1,70 @@
-name: Chocolatine
+name: chocolatine
+
 
 on:
   push:
-    branches-ignore: [ ga-ignore-* ]
+    branches-ignore:
+      -'ga-ignore-'
   pull_request:
-    branches-ignore:  [ ga-ignore-* ]
-
+     branches-ignore:
+      - 'ga-ignore-'
 env:
-  MIRROR_URL: "https://epitech.bj/"
-  EXECUTABLES:  "lem_in"
+    MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-110-COT-1-1-BSQ-michkath1.aboudou.git
+    EXECUTABLES: BSQ
 
 jobs:
-    build:
-      runs-on:  ubuntu-latest
-      steps:
-      - name: checkout Branche
-        uses: actions/checkout@v2
-        with:
-          ref:  ${{ github.head_ref }}
-      - name: Job1
-        if: success()
-        run: echo "Job1"
-    check_coding_style:
-      runs-on:  ubuntu-latest
-      container: ghcr.io/epitech/coding-style-checker:latest
-      steps:
-      - name: Run coding style
-        run:  check.sh $(pwd) $(pwd)
-    check_program_compilation:
-      runs-on:  ubuntu-latest
-      container: epitechcontent/epitest-docker
-      steps:
-      - name: Run make
-        run: echo "make"
-        timeout-minutes: 2
-       
-      - name: Run clean
-        run: echo "make clean"
+  check_coding_style:
+    runs-on: ubuntu-latest
+    container: ghcr.io/epitech/coding-style-checker:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          check.sh $(pwd) $(pwd)
+          cat coding-style-reports.log
+          while read line
+          do
+           tab=(${line//:/ })
+           str=(${tab[0]//// })
+           echo "::error title=${tab[2]} coding style error: #${str[1]}#L${tab[1]}::${tab[3]}"
+          done < coding-style-reports.log
 
-      - name: Test executables
-        run:  |
-          if  [ ! -x EXECUTABLES ]
+
+  check_program_compilation:
+     runs-on: ubuntu-latest
+     container: epitechcontent/epitest-docker
+     #needs: [check_coding_style ]
+     steps:
+      - uses: actions/checkout@v3
+      - run: make
+      - run: |
+          make clean
+          if [[ -e "$EXECUTABLES" ]] && [[ -x "$EXECUTABLES" ]]
           then
-              echo 'EXECUTABLES does not there or not executable'
+             exit 0
+          else
+             exit 1
           fi
-    run_tests:
-      runs-on:  ubuntu-latest
-      container: epitechcontent/epitest-docker
-      steps:
-      - name: Run test
-        run: echo "make tests_run"
-        timeout-minutes: 2
-    push_to_mirror:
-      runs-on:  ubuntu-latest
-      if: github.event_name == 'push'
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v2
-        - name: Mirror repository
-          uses: pixta-dev/repository-mirroring-action@v1.0.0
-          with:
-            source-repository: my-username/my-repo
-            destination-repository: my-username/my-mirror-repo
-        - name: Setup SSH Key
-          uses: webfactory/ssh-agent@v0.4.2
-          with:
-            ssh-private-key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-        - name: Push to mirror
-          run: |
-            echo "git push $MIRROR_URL"
+
+  run_tests:
+     runs-on: ubuntu-latest
+     container: epitechcontent/epitest-docker
+     #needs: [check_coding_style, check_program_compilation]
+     steps:
+      - uses: actions/checkout@v3
+      - run: |
+          make tests_run
+
+  push_to_mirror:
+     runs-on: ubuntu-latest
+     if: ${{ github.event_name == 'push' }}
+     #needs: [check_coding_style, check_program_compilation, run_tests]
+     steps:
+       - uses: actions/checkout@v3
+         with:
+           fetch-depth: 0
+       - uses: pixta-dev/repository-mirroring-action@v1
+         with:
+           target_repo_url:
+             ${{ env.MIRROR_URL }}
+           ssh_private_key:
+             ${{ secrets.GIT_SSH_PRIVATE_KEY }}
