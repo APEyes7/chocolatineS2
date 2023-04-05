@@ -1,7 +1,7 @@
 name: Chocolatine
 
 env:
-  MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-101-COT-1-1-myprintf-mawunam.megnassan.git
+  MIRROR_URL: git@github.com:godlynjr/heaven.git
   EXECUTABLES: libmy.a
 
 on:
