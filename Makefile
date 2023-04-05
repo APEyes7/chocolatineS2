@@ -23,7 +23,8 @@ all: $(NAME)
 $(NAME):
 		gcc -o $(NAME) $(SRC) $(FLAGS)
 
-tests_run:	gcc -o $(TNAME) $(SRC) $(TESTS) $(TFLAGS)
+tests_run:	
+		gcc -o $(TNAME) $(SRC) $(TESTS) $(TFLAGS)
 			./$(NAME)
 
 clean:
