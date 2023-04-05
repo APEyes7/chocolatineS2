@@ -1,29 +1,72 @@
 name: Chocolatine
 
+env:
+  MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-101-COT-1-1-myprintf-mawunam.megnassan.git
+  EXECUTABLES: libmy.a
+
 on:
   push:
+    branches-ignore:
+      - 'ga-ignore-*'
   pull_request:
     branches-ignore:
-      - 'ga-ignore-* '
+      - 'ga-ignore-*'
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - name: check_branch_name
-        uses: actions/checkout@v2
-      - run: echo name is $GITHUB_REF
-
   check_coding_style:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/epitech/coding-style-checker:latest
+    env:
+      SHERLOCKED: ${{ secrets.SHERLOCKED }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Run coding style checker
+        run: check.sh $(pwd) $(pwd) ${{ env.SHERLOCKED }}
+        continue-on-error: true
+      - name: Display errors
+        run: |
+          ERRORS=$(find . -type f -name ".c" -o -name ".h" -exec grep -n -H -E -e "^.:[[:space:]][[:graph:]]+[[:space:]]*$" {} \;)
+          if [ -n "$ERRORS" ]; then
+            echo "$ERRORS" | awk -F: '{printf "::error file=%s,line=%d::%s\n", $1, $2, $3}'
+            exit 1
+          fi
+  check_program_compilation:
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    timeout-minutes: 3
+    env:
+      SHERLOCKED: ${{ secrets.SHERLOCKED }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Build code
+        run: make
+      - name: Clean build
+        run: make clean
+        
+  run_tests:
+    runs-on: ubuntu-latest
+    container:
+      image: epitechcontent/epitest-docker
+    timeout-minutes: 3
+    env:
+      SHERLOCKED: ${{ secrets.SHERLOCKED }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Run tests
+        run: make tests_run
+
+  push_to_mirror:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          check.sh $(pwd) $(pwd)
-          while read line
-          do
-             tab=(${line//:/ })
-             echo "::error title=${tab[2]} coding style error: ${tab[0]}#L${tab[1]} ::${tab[3]}"
-          done < coding-style-reports.log
+        with:
+          fetch-depth: 0
+      - uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ env.MIRROR_URL }}
+          ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
