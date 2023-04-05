@@ -2,79 +2,49 @@ name: Chocolatine
 
 on:
   push:
-    branches-ignore:
-      - 'ga-ignore-* '
   pull_request:
     branches-ignore:
-      - 'ga-ignore-*'
+      - 'ga-ignore-* '
 
-env:
-  MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-110-COT-1-1-pushswap-florentin.ganfon.git
-  EXECUTABLES: guess
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check_branch_name
+        uses: actions/checkout@v2
+      - run: echo name is $GITHUB_REF
 
-jobs:  
   check_coding_style:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/epitech/coding-style-checker:latest
     steps:
-      - name: check_coding_style
-        uses: actions/checkout@v3
-      - run : |
-          check.sh $(pwd) $(pwd)
-          cat coding-style-reports.log
-          if [ -s $coding-style-reports.log ]
-          i=0
-          then
-            while read -r line
-            do                                                                                                                                                                       
-              tab=( ${line//:/ } )
-              yo=(${tab[0]})
-              str=( ${yo//// } )
-              echo "::error file=${str[1]},line=${tab[3]},title=${tab[2]} coding style error::${tab[3]}"
-              ((i++))
-            done < "coding-style-reports.log"
-          fi
-  
-  check_program_compilation:
-    runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
-    steps:
-      - name: make_test
-        uses: actions/checkout@v3
-      - run: make
-        timeout-minutes: 2
+      - uses: actions/checkout@v3
       - run: |
-            if [[ -e $EXECUTABLES ]] && [[ -x $EXECUTABLES ]]
-            then
-              exit 0
-            else
-                exit 1
-            fi
-      - name: make_clean_test
-        uses: actions/checkout@v3
-      - run: make clean
-      
+          check.sh $(pwd) $(pwd)
+          while read line
+          do
+             tab=(${line//:/ })
+             echo "::error title=${tab[2]} coding style error: ${tab[0]}#L${tab[1]} ::${tab[3]}"
+          done < coding-style-reports.log
+
+  check_program_compilation:
+     runs-on: ubuntu-latest
+     container:
+       image: epitechcontent/epitest-docker
+     steps:
+       - name: check_program_compilation
+         uses: actions/checkout@v2
+       - run: make
+       - run: make clean
+         timeout-minutes: 1
+
   run_tests:
-    runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
-    steps:
-      - name: run_tests
-        uses: actions/checkout@v3
-      - run:
-          make test run
-        timeout-minutes: 2
-          
-  push_to_mirror:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' }}
-    steps:
-        - uses: actions/checkout@v3
-          with:
-            fetch-depth: 0
-        - uses: pixta-dev/repository-mirroring-action@v1
-          with:
-            target_repo_url:
-                ${{ env.MIRROR_URL }}
-            ssh_private_key:
-                ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+     runs-on: ubuntu-latest
+     container:
+       image:  epitechcontent/epitest-docker
+     steps:
+       - name: run_tests
+         uses: actions/checkout@v2
+       - run: make tests_run
+         timeout-minutes: 2
