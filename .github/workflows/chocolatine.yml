@@ -39,7 +39,6 @@ jobs:
   check_program_compilation:
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
-    needs: [check_coding_style]
     steps:
       - name: make_test
         uses: actions/checkout@v3
@@ -59,7 +58,6 @@ jobs:
   run_tests:
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
-    needs: [check_coding_style, check_program_compilation]
     steps:
       - name: run_tests
         uses: actions/checkout@v3
@@ -70,7 +68,6 @@ jobs:
   push_to_mirror:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' }}
-    needs: [check_coding_style, check_program_compilation, run_tests]
     steps:
         - uses: actions/checkout@v3
           with:
