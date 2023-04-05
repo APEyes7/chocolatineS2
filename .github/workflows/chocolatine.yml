@@ -1,70 +1,83 @@
-name: chocolatine
-
+name: Chocolatine
 
 on:
   push:
     branches-ignore:
-      -'ga-ignore-'
+      - 'ga-ignore-* '
   pull_request:
-     branches-ignore:
-      - 'ga-ignore-'
-env:
-    MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-110-COT-1-1-BSQ-michkath1.aboudou.git
-    EXECUTABLES: BSQ
+    branches-ignore:
+      - 'ga-ignore-*'
 
-jobs:
+env:
+  MIRROR_URL: git@github.com:EpitechPromo2027/B-CPE-110-COT-1-1-pushswap-florentin.ganfon.git
+  EXECUTABLES: push_wap
+
+jobs:  
   check_coding_style:
     runs-on: ubuntu-latest
-    container: ghcr.io/epitech/coding-style-checker:latest
+    container:
+      image: ghcr.io/epitech/coding-style-checker:latest
     steps:
-      - uses: actions/checkout@v3
-      - run: |
+      - name: check_coding_style
+        uses: actions/checkout@v3
+      - run : |
           check.sh $(pwd) $(pwd)
           cat coding-style-reports.log
-          while read line
-          do
-           tab=(${line//:/ })
-           str=(${tab[0]//// })
-           echo "::error title=${tab[2]} coding style error: #${str[1]}#L${tab[1]}::${tab[3]}"
-          done < coding-style-reports.log
-
-
-  check_program_compilation:
-     runs-on: ubuntu-latest
-     container: epitechcontent/epitest-docker
-     needs: [check_coding_style ]
-     steps:
-      - uses: actions/checkout@v3
-      - run: make
-      - run: |
-          make clean
-          if [[ -e "$EXECUTABLES" ]] && [[ -x "$EXECUTABLES" ]]
+          if [ -s $coding-style-reports.log ]
+          i=0
           then
-             exit 0
-          else
-             exit 1
+            while read -r line
+            do                                                                                                                                                                       
+              tab=( ${line//:/ } )
+              yo=(${tab[0]})
+              str=( ${yo//// } )
+              echo "::error file=${str[1]},line=${tab[3]},title=${tab[2]} coding style error::${tab[3]}"
+              ((i++))
+            done < "coding-style-reports.log"
           fi
-
-  run_tests:
-     runs-on: ubuntu-latest
-     container: epitechcontent/epitest-docker
-     needs: [check_coding_style, check_program_compilation]
-     steps:
-      - uses: actions/checkout@v3
+  
+  check_program_compilation:
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    needs: [check_coding_style]
+    steps:
+      - name: make_test
+        uses: actions/checkout@v3
+      - run: make
+        timeout-minutes: 2
       - run: |
-          make tests_run
-
+            if [[ -e $EXECUTABLES ]] && [[ -x $EXECUTABLES ]]
+            then
+              exit 0
+            else
+                exit 1
+            fi
+      - name: make_clean_test
+        uses: actions/checkout@v3
+      - run: make clean
+      
+  run_tests:
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    needs: [check_coding_style, check_program_compilation]
+    steps:
+      - name: run_tests
+        uses: actions/checkout@v3
+      - run:
+          make test run
+        timeout-minutes: 2
+          
   push_to_mirror:
-     runs-on: ubuntu-latest
-     if: ${{ github.event_name == 'push' }}
-     needs: [check_coding_style, check_program_compilation, run_tests]
-     steps:
-       - uses: actions/checkout@v3
-         with:
-           fetch-depth: 0
-       - uses: pixta-dev/repository-mirroring-action@v1
-         with:
-           target_repo_url:
-             ${{ env.MIRROR_URL }}
-           ssh_private_key:
-             ${{ secrets.GIT_SSH_PRIVATE_KEY }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    needs: [check_coding_style, check_program_compilation, run_tests]
+    steps:
+        - uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - uses: pixta-dev/repository-mirroring-action@v1
+          with:
+            target_repo_url:
+                ${{ env.MIRROR_URL }}
+            ssh_private_key:
+                ${{ secrets.GIT_SSH_PRIVATE_KEY }}
