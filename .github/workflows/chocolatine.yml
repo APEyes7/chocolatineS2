@@ -1,0 +1,29 @@
+name: Chocolatine
+
+on:
+  push:
+  pull_request:
+    branches-ignore:
+      - 'ga-ignore-* '
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check_branch_name
+        uses: actions/checkout@v2
+      - run: echo name is $GITHUB_REF
+
+  check_coding_style:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/epitech/coding-style-checker:latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          check.sh $(pwd) $(pwd)
+          while read line
+          do
+             tab=(${line//:/ })
+             echo "::error title=${tab[2]} coding style error: ${tab[0]}#L${tab[1]} ::${tab[3]}"
+          done < coding-style-reports.log
