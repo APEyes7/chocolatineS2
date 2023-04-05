@@ -5,47 +5,50 @@ on:
     branches-ignore:
       - 'ga-ignore-*'
   pull_request:
-      branches-ignore:
+  branches-ignore:
       - 'ga-ignore-*'
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - name: step1
-      uses: actions/checkout@v3
-    - run: |
-        echo The nameof the repo is $GITHUB_REF
-        du -skh --exclude=".git"
+env:
+  MIRROR_URL: "git@github.com:EpitechPromo2027/B-MAT-100-COT-1-1-101pong-hodavia.bangbola.git"
+  EXECUTABLES: "101pong"
  
-  check_program_compilation:
+jobs:
+  check_coding_style
     runs-on: ubuntu-latest
-    container: epitechcontent/epitest-docker
+    container: ghcr.io/epitech/coding-style-checker:latest
     steps:
-    - name: make_test
+      - name: check_coding_style
+        uses: actions/checkout@v3
+      - run: check.sh $(pwd) $(pwd)
+
+check_program_compilation      
+  runs-on: ubuntu-latest
+  container:  epitechcontent/epitest-docker
+  timeout-minutes: 2
+  steps:
+    - name: check_program_compilation
       uses: actions/checkout@v3
     - run: make
-      timeout-minutes: 1
-    - run: make clean
-    - run: |
-            if [[ -e $EXECUTABLES ]] && [[ -x $EXECUTABLES ]]
-            then
-              exit 0
-            else
-                exit 1
-            fi
-  check_coding_style:
-   runs-on: ubuntu-latest
-   container:
-      image: ghcr.io/epitech/coding-style-checker:latest
-   steps:
-    - name: check_coding_style
+    - name: Clean
       uses: actions/checkout@v3
-    - run: |
-        check.sh $(pwd) $(pwd)
-        cat coding-style-reports.log
-        if [[ -s $coding-style-reports.log ]]
-          done < "coding-style-reports.log"
-        exit 1
-        fi
-
+    - run: make clean
+ 
+run_tests
+        runs-on: ubuntu-latest
+        container: epitechcontent/epitest-docker
+        timeout-minutes: 2
+        steps:
+          - name: run_tests
+          uses: actions/checkout@v2
+          - name: xc_test
+          - run: make run_tests
+       
+push_to_mirror
+       runs-on: ubuntu-latest
+       if: github.event_name == 'push'
+       steps:
+         - name: push_to_mirror
+           uses: actions/checkout@v3
+         - name: push
+         - use: pixta-dev/repository-mirroring-action@v1
+         - with:
