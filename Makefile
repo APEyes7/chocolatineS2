@@ -25,7 +25,7 @@ $(NAME):
 
 tests_run:	
 		gcc -o $(TNAME) $(SRC) $(TESTS) $(TFLAGS)
-			./$(NAME)
+			./$(TNAME)
 
 clean:
 		rm -f *.gcno *.gcda
