@@ -9,7 +9,7 @@ on:
 
 env:
   MIRROR_URL: "git@github.com:godlynjr/Minishell_2.git"
-  EXECUTABLES: "mysh"
+  EXECUTABLES: "guess"
 
 
 jobs:
