@@ -28,7 +28,7 @@ tests_run:
 			./$(TNAME)
 
 clean:
-		rm -f *.gcno *.gcda
+		rm -f *.gcno
 
 fclean:	clean
 		rm -f $(NAME)
