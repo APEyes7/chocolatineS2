@@ -1,6 +1,6 @@
 name: Chocolatine
 env:
-  MIRROR_URL : git@github.com: EpitechPromo2027/B-DOP-200-COT-2-1-chocolatine-espoir.agoli-agbo.git
+  MIRROR_URL : "git@github.com:EpitechPromo2027/B-DOP-200-COT-2-1-chocolatine-espoir.agoli-agbo.git"
   EXECUTABLES : mysh
 
 on:
