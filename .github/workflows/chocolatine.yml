@@ -1,18 +1,32 @@
 name: Chocolatine
+env:
+  MIRROR_URL : git@github.com: EpitechPromo2027/B-DOP-200-COT-2-1-chocolatine-espoir.agoli-agbo.git
+  EXECUTABLES : mysh
 
 on:
   push:
     branches-ignore:
-      - 'ga-ignore-*'
+      - 'ga-ignore-* '
   pull_request:
     branches-ignore:
       - 'ga-ignore-*'
 
-env:
-  MIRROR_URL: git@github.com:EpitechPromo2027/B-MAT-100-COT-1-1-101pong-wolfferye.fatigba.git
-  EXECUTABLES: 101pong
+jobs:
+  check_coding_style :
+    runs-on: ubuntu-latest
+    container: epitechcontent/epitest-docker
+    steps:
+      - uses: actions/checkout@v2
+          with:
+            fetch-depth: 0
+      - name: check_for_coding-style
+      - run: ghcr.io/epitech/coding-style-checker:latest
+      - name: Exit if needed
+        if: ${{ env.action_state == 'true' }}
+        run:
+            exit 1
+        continue-on-error: false
 
-jobs:  
   check_program_compilation:
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
@@ -24,8 +38,8 @@ jobs:
       - name: make_clean_test
         uses: actions/checkout@v3
       - run: make clean
-     
-run_tests:
+
+  run_tests:
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker
     needs: [check_program_compilation]
@@ -36,12 +50,13 @@ run_tests:
           make test run
         timeout-minutes: 2
 
-push_to_mirror:
+  push_to_mirror:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' }}
     needs: [check_program_compilation, run_tests]
     steps:
         - uses: actions/checkout@v3
+          with:
             fetch-depth: 0
         - uses: pixta-dev/repository-mirroring-action@v1
           with:
